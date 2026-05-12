@@ -1,8 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-
-const MODEL = 'gemini-2.0-flash'
+const MODEL = 'gemini-2.5-flash'
 
 interface MenuProduct {
   id: string
@@ -20,28 +19,26 @@ interface AssistantResponse {
   message: string
 }
 
-function buildSystemPrompt(menuData: MenuProduct[], restaurantName: string, lang: 'tr' | 'en') {
-  const langRule = lang === 'en'
-    ? 'Respond in English.'
-    : 'Türkçe konuş.'
+function buildSystemInstruction(menuData: MenuProduct[], restaurantName: string, lang: 'tr' | 'en') {
+  const langRule = lang === 'en' ? 'Respond in English.' : 'Türkçe konuş.'
 
   return `You are the digital menu assistant for ${restaurantName} restaurant.
 You help customers find items from the menu.
 
 RESTAURANT IDENTITY:
-This is an Italian cuisine restaurant. When making recommendations, always prioritize Italian dishes such as pasta, pizza, risotto, lasagna. Items like burgers and wraps should only be suggested if the customer specifically asks for them.
+This is an Italian cuisine restaurant. Always prioritize Italian dishes such as pasta, pizza, risotto, lasagna. Suggest burgers or wraps only if the customer specifically asks.
 
-MENU DATA:
+MENU DATA (JSON):
 ${JSON.stringify(menuData)}
 
 RULES:
-- Only suggest items that exist in the menu
-- State prices correctly
-- Reply ONLY in JSON format, nothing else, no code blocks:
+- Only suggest items that exist in the menu above.
+- State prices correctly.
+- Reply ONLY in valid JSON — no markdown, no code blocks, no extra text:
   { "products": [...], "message": "..." }
-- Each product in the products array: { "id": "...", "name_tr": "...", "price": 0, "currency": "₺", "image_url": "..." }
+- Each product object: { "id": "...", "name_tr": "...", "price": 0, "currency": "₺", "image_url": "..." }
 - ${langRule}
-- Suggest maximum 3 products`
+- Suggest at most 3 products.`
 }
 
 export async function askMenuAssistant(
@@ -50,22 +47,21 @@ export async function askMenuAssistant(
   restaurantName: string,
   lang: 'tr' | 'en' = 'tr'
 ): Promise<AssistantResponse> {
-  const systemPrompt = buildSystemPrompt(menuData, restaurantName, lang)
-  const model = genAI.getGenerativeModel({ model: MODEL })
-  const chat = model.startChat({
-    history: [
-      { role: 'user', parts: [{ text: systemPrompt }] },
-      { role: 'model', parts: [{ text: 'Anladım, menü asistanınım. Sorularınızı bekliyorum.' }] },
-    ],
+  const model = genAI.getGenerativeModel({
+    model: MODEL,
+    systemInstruction: buildSystemInstruction(menuData, restaurantName, lang),
   })
 
-  const result = await chat.sendMessage(userMessage)
-  const text = result.response.text()
-  const clean = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim()
+  const result = await model.generateContent(userMessage)
+  const raw = result.response.text()
+
+  // Strip any accidental markdown fences
+  const clean = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
 
   try {
     return JSON.parse(clean) as AssistantResponse
   } catch {
+    console.error('[AI] JSON parse failed. Raw:', raw.substring(0, 300))
     return { products: [], message: 'Üzgünüm, yanıt işlenirken bir hata oluştu. Lütfen tekrar deneyin.' }
   }
 }
