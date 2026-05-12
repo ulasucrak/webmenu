@@ -1,26 +1,66 @@
 @import "tailwindcss";
 
+/* ── Niyokki brand tokens ─────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --niyokki-black: #0a0a0a;
+  --niyokki-red:   #c41e2a;
+  --niyokki-green: #2d7a2d;
+  --niyokki-white: #ffffff;
+  --niyokki-gray:  #1a1a1a;
+}
+
+/* ── Dark / Light semantic tokens ────────────────────── */
+[data-theme="dark"], :root {
+  --logo-filter: brightness(0) invert(1);
+  --bg-primary:   #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-card:      #141414;
+  --text-primary: #ffffff;
+  --text-secondary: #999999;
+  --border:       rgba(255,255,255,0.08);
+  --header-bg:    rgba(0,0,0,0.85);
+  --header-border:rgba(255,255,255,0.08);
+  --header-text:  #ffffff;
+  --card-overlay: rgba(0,0,0,0.82);
+  --card-overlay-mid: rgba(0,0,0,0.22);
+}
+
+[data-theme="light"] {
+  --logo-filter: none;
+  --bg-primary:   #f5f0eb;
+  --bg-secondary: #ede8e3;
+  --bg-card:      #ffffff;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border:       rgba(0,0,0,0.1);
+  --header-bg:    rgba(245,240,235,0.92);
+  --header-border:rgba(0,0,0,0.1);
+  --header-text:  #1a1a1a;
+  --card-overlay: rgba(0,0,0,0.58);
+  --card-overlay-mid: rgba(0,0,0,0.08);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+html {
+  scroll-behavior: smooth;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
